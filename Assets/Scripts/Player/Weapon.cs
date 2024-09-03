@@ -26,5 +26,7 @@ public class Weapon : MonoBehaviour
     public float p_BulletMinDamage;
     public float p_TimeBeforeSelfDestruct;
 
+    public bool isAuto;
+    public bool isDefaultWeapon;
     public bool p_Shotgun;
 }

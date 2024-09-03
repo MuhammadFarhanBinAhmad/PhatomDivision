@@ -10,17 +10,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dd14c3d7a5976ac479afda84b23d5661, type: 3}
-  m_Name: Bren Gun
+  m_Name: Pistol
   m_EditorClassIdentifier: 
-  GunShotAudio: {fileID: 8300000, guid: aa4b07ddc444e2d409b3dd442337b1c4, type: 3}
-  WeaponName: Bren Gun
-  FireRate: 6
-  ReloadTime: 5
-  BulletSpeed: 30
+  GunShotAudio: {fileID: 8300000, guid: 49c89821b8d82554bbb63850e01f46e2, type: 3}
+  WeaponName: M1911
+  FireRate: 1
+  ReloadTime: 2
+  BulletSpeed: 35
   p_TimeBeforeSelfDestruct: 3
-  MaxAmmo: 300
-  MaxMagCount: 30
-  MaxDamage: 12
-  MinDamage: 8
-  isAuto: 1
+  MaxAmmo: 999
+  MaxMagCount: 10
+  MaxDamage: 4
+  MinDamage: 7
+  isAuto: 0
+  isDefaultWeapon: 1
   Shotgun: 0

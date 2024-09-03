@@ -12,36 +12,12 @@ public class PlayerWeaponManager : MonoBehaviour
     public float p_ThrowForce;
     public int p_GrenadeRemaining;
 
-    public WeaponType[] so_WeaponType = new WeaponType[2];
-    public Weapon[] s_Weapon = new Weapon[2];
+
+    public List<WeaponType> so_WeaponType = new List<WeaponType> ();
+    public List<Weapon> s_Weapon = new List<Weapon>();
     public GameObject p_Projectile;
     public Transform p_Spawnpos;
 
-
-    /*    public string p_WeaponName;
-
-        [Header("FireRate")]
-        public float p_WeaponFireRate;
-        public GameObject p_Projectile;
-        public Transform p_Spawnpos;
-
-        [Header("AmmoAndMagazine")]
-        public int p_CurrAmmo;
-        public int p_MaxAmmo;
-        public int p_CurrMagCount;
-        public int p_MaxMagCount;
-
-        [Header("ReloadStats")]
-        public bool p_Reloading;
-        public float p_ReloadTime;
-        public float p_ReloadTimeLeft;
-        public float p_StartSpecialReloadTime;
-        public float p_EndSpecialReloadTime;
-
-        [Header("ProjectileStats")]
-        public float p_BulletSpeed;
-        public float p_BulletMaxDamage;
-        public float p_BulletMinDamage;*/
 
     public bool p_Reloading;
     public float p_ReloadTimeLeft;
@@ -58,9 +34,11 @@ public class PlayerWeaponManager : MonoBehaviour
          *      p_StartSpecialReloadTime = p_ReloadTime * .10f;
                 p_EndSpecialReloadTime = p_ReloadTime * .30f;
         */
-        SetWeapon(so_WeaponType[0],0);
-        SetWeapon(so_WeaponType[1],1);
+        for(int i = 0; i < so_WeaponType.Count; i++)
+        {
+            SetWeapon(so_WeaponType[i], i);
 
+        }
         //Set weapon stats
         //ChangeWeapon();
 
@@ -78,11 +56,14 @@ public class PlayerWeaponManager : MonoBehaviour
         s_Weapon[numb].p_BulletMinDamage = wt.MinDamage;
         s_Weapon[numb].p_BulletSpeed = wt.BulletSpeed;
         s_Weapon[numb].p_WeaponName = wt.WeaponName;
+        s_Weapon[numb].isAuto = wt.isAuto;
+        s_Weapon[numb].isDefaultWeapon = wt.isDefaultWeapon;
         s_Weapon[numb].p_Shotgun = wt.Shotgun;
         s_Weapon[numb].p_TimeBeforeSelfDestruct = wt.p_TimeBeforeSelfDestruct;
 
         s_Weapon[numb].p_CurrAmmo = s_Weapon[numb].p_MaxAmmo;
         s_Weapon[numb].p_CurrMagCount = s_Weapon[numb].p_MaxMagCount;
+
     }
 
     private void Update()
@@ -90,26 +71,39 @@ public class PlayerWeaponManager : MonoBehaviour
 
         Rotation();
 
-        if (Input.GetButton("Fire") && Time.time >= nexttime_ToFire && s_Weapon[weaponEquipped].p_CurrMagCount >0 && s_Weapon[weaponEquipped].p_CurrAmmo > 0)
+        if (s_Weapon[weaponEquipped].isAuto)
         {
-            nexttime_ToFire = Time.time + 1f / s_Weapon[weaponEquipped].p_WeaponFireRate;
-            Shoot();
-            s_Weapon[weaponEquipped].p_CurrMagCount--;
-            s_PlayerUI.UpdateAmmoUI(s_Weapon[weaponEquipped]);
+            if (Input.GetButton("Fire") && Time.time >= nexttime_ToFire && s_Weapon[weaponEquipped].p_CurrMagCount > 0 && s_Weapon[weaponEquipped].p_CurrAmmo > 0)
+            {
+                nexttime_ToFire = Time.time + 1f / s_Weapon[weaponEquipped].p_WeaponFireRate;
+                Shoot();
+                s_Weapon[weaponEquipped].p_CurrMagCount--;
+                s_PlayerUI.UpdateAmmoUI(s_Weapon[weaponEquipped]);
+            }
+        }
+        else
+        {
+            if (Input.GetButtonDown("Fire") && Time.time >= nexttime_ToFire && s_Weapon[weaponEquipped].p_CurrMagCount > 0 && s_Weapon[weaponEquipped].p_CurrAmmo > 0)
+            {
+                nexttime_ToFire = Time.time + 1f / s_Weapon[weaponEquipped].p_WeaponFireRate;
+                Shoot();
+                s_Weapon[weaponEquipped].p_CurrMagCount--;
+                s_PlayerUI.UpdateAmmoUI(s_Weapon[weaponEquipped]);
+            }
         }
         if (Input.GetButton("Reload") && !p_Reloading)
         {
             p_Reloading = true;
             p_ReloadTimeLeft = s_Weapon[weaponEquipped].p_ReloadTime;
         }
-        if (Input.GetButton("Reload") && p_Reloading)
+/*        if (Input.GetButton("Reload") && p_Reloading)
         { 
             if (p_ReloadTimeLeft >= s_Weapon[weaponEquipped].p_StartSpecialReloadTime && p_ReloadTimeLeft <= s_Weapon[weaponEquipped].p_EndSpecialReloadTime)
             {
                 print("hit");
             }
         }
-
+*/
         if (Input.GetKeyDown(KeyCode.G) && p_GrenadeRemaining > 0)
             ThrowGrenade();
 
@@ -126,10 +120,22 @@ public class PlayerWeaponManager : MonoBehaviour
             p_Reloading = false;
             s_PlayerUI.UpdateAmmoUI(s_Weapon[weaponEquipped]);
         }
+        if (Input.GetKeyDown(KeyCode.Alpha3))
+        {
+            weaponEquipped = 2;
+            p_Reloading = false;
+            s_PlayerUI.UpdateAmmoUI(s_Weapon[weaponEquipped]);
+        }
+        if (Input.GetKeyDown(KeyCode.Alpha4))
+        {
+            weaponEquipped = 3;
+            p_Reloading = false;
+            s_PlayerUI.UpdateAmmoUI(s_Weapon[weaponEquipped]);
+        }
         if (Input.GetKeyDown (KeyCode.Q))
         {
             weaponEquipped++;
-            if (weaponEquipped >1)
+            if (weaponEquipped >so_WeaponType.Count)
             {
                 weaponEquipped = 0;
             }
@@ -186,7 +192,10 @@ public class PlayerWeaponManager : MonoBehaviour
             if(ammoNeeded <= s_Weapon[weaponEquipped].p_CurrAmmo)
             {
                 s_Weapon[weaponEquipped].p_CurrMagCount = s_Weapon[weaponEquipped].p_MaxMagCount;
-                s_Weapon[weaponEquipped].p_CurrAmmo -= ammoNeeded;
+                if(!s_Weapon[weaponEquipped].isDefaultWeapon)
+                {
+                    s_Weapon[weaponEquipped].p_CurrAmmo -= ammoNeeded;
+                }
             }
             else//Not enough for full mag. Reload with whatever is left
             {

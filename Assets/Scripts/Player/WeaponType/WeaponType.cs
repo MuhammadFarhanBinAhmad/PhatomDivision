@@ -20,6 +20,7 @@ public class WeaponType : ScriptableObject
     public int MaxDamage;
     public int MinDamage;
 
-
+    public bool isAuto;
+    public bool isDefaultWeapon;
     public bool Shotgun;
 }
