@@ -4,8 +4,8 @@ using UnityEngine;
 
 public class PlayerWeaponManager : MonoBehaviour
 {
-    public Camera mainCamera;
-    PlayerUI s_PlayerUI;
+/*    public Camera mainCamera;
+*/    PlayerUI s_PlayerUI;
 
     [Header("GrenadeStats")]
     public GameObject p_Grenade;
@@ -69,8 +69,8 @@ public class PlayerWeaponManager : MonoBehaviour
     private void Update()
     {
 
-        Rotation();
-
+/*        Rotation();
+*/
         if (s_Weapon[weaponEquipped].isAuto)
         {
             if (Input.GetButton("Fire") && Time.time >= nexttime_ToFire && s_Weapon[weaponEquipped].p_CurrMagCount > 0 && s_Weapon[weaponEquipped].p_CurrAmmo > 0)
@@ -220,7 +220,7 @@ public class PlayerWeaponManager : MonoBehaviour
 
         s_PlayerUI.UpdateGrenadeUI();
     }
-    void Rotation()
+/*    void Rotation()
     {
         Vector3 mouseScreenPosition = Input.mousePosition;
 
@@ -236,5 +236,5 @@ public class PlayerWeaponManager : MonoBehaviour
 
             transform.rotation = Quaternion.Euler(0, targetRotation.eulerAngles.y, 0);
         }
-    }
+    }*/
 }

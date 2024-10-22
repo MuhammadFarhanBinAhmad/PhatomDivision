@@ -8,6 +8,7 @@ public class EnemyMovement : MonoBehaviour
     {
         PATROL,
         ATTACKING,
+        SUSPICIOUS,
         ONALERT
     }
 
@@ -20,6 +21,10 @@ public class EnemyMovement : MonoBehaviour
     [Header("MovementStats")]
     public float s_MovementSpeed;
 
+    [Header("SuspiciousStats")]
+    public float sus_CurrentTime;
+    public float sus_MaxTime;
+
     [Header("DetectionZone")]
     public Transform coneTip;  // The position of the tip of the cone (vertex)
     public float coneAngle;  // The angle at the tip of the cone (in degrees)
@@ -28,6 +33,7 @@ public class EnemyMovement : MonoBehaviour
     public float m_MaxAlertValue;
     public float m_AlertValue;
     public Transform m_CenterPoint;
+    public Vector3 m_LastPlayerLocation;
 
     public bool m_PlayerInContact;
 
@@ -60,10 +66,25 @@ public class EnemyMovement : MonoBehaviour
                     }
                     break;
                 }
+            case MODE.SUSPICIOUS:
+                {
+                    if (sus_CurrentTime > 0)
+                    {
+                        m_Agent.speed = 0;
+                        transform.LookAt(m_LastPlayerLocation);
+                        sus_CurrentTime -= Time.deltaTime * 5;
+                    }
+/*                    else
+                    {
+                        m_Agent.speed = s_MovementSpeed;
+                        p_Mode = MODE.PATROL;
+                    }*/
+                    break;
+                }
             case MODE.ONALERT:
                 {
-                    transform.LookAt(m_Target.transform);
-                    m_Agent.speed = 0;
+                    m_Agent.speed = s_MovementSpeed;
+                    m_Agent.SetDestination(m_LastPlayerLocation);
                     break;
                 }
 
@@ -116,12 +137,15 @@ public class EnemyMovement : MonoBehaviour
                         float dist = Vector3.Distance(playerpos, transform.position);
 
                         if (m_AlertValue < m_MaxAlertValue)
-                            m_AlertValue += Time.deltaTime * 15;
+                            m_AlertValue += Time.deltaTime * 25;
                         else if (m_AlertValue >= m_MaxAlertValue)
                             m_AlertValue = m_MaxAlertValue;
 
-                        m_PlayerInContact = true;
+                        p_Mode = MODE.SUSPICIOUS;
+                        sus_CurrentTime = sus_MaxTime;
 
+                        m_PlayerInContact = true;
+                        m_LastPlayerLocation = playerpos;
                         m_Target = collider.transform ;
                     }
                 }
@@ -138,18 +162,7 @@ public class EnemyMovement : MonoBehaviour
 
     void UpdateBehaviourState()
     {
-        if (m_AlertValue > 50 && m_AlertValue < 95)
-        {
-             p_Mode = MODE.ONALERT;
-        }
-        if (m_AlertValue > 95)
-        {
-            p_Mode = MODE.ATTACKING;
-        }
-        if (m_AlertValue <= 75)
-        {
-            p_Mode = MODE.PATROL;
-        }
+
     }
 
     void OnDrawGizmos()
