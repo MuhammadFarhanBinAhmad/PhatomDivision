@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using UnityEngine;
 using UnityEngine.AI;
 public class EnemyMovement : MonoBehaviour
@@ -20,10 +21,27 @@ public class EnemyMovement : MonoBehaviour
 
     [Header("MovementStats")]
     public float s_MovementSpeed;
+    public float s_changeRotateDirectionTime;
+    public float s_MaxChangeRotateDirectionTime;
+    public Vector3 rotationSpeed = new Vector3(0, 50, 0); // Degrees per second on each axis
 
-    [Header("SuspiciousStats")]
-    public float sus_CurrentTime;
-    public float sus_MaxTime;
+    [Header("PatrolState")]
+    public float m_idelTime;
+    public float m_maxIdelTime;
+
+    [Header("SuspiciousState")]
+    public float m_susTime;
+    public float m_maxSusTime;
+
+    [Header("OnAlert")]
+    public float m_alertTime;
+    public float m_maxAlertTime;
+
+    [Header("Attack")]
+    public float m_searchTime;
+    public float m_maxSearchTime;
+    public float m_lookOutTime;
+    public float m_maxLookOutTime;
 
     [Header("DetectionZone")]
     public Transform coneTip;  // The position of the tip of the cone (vertex)
@@ -33,10 +51,9 @@ public class EnemyMovement : MonoBehaviour
     public float m_MaxAlertValue;
     public float m_AlertValue;
     public Transform m_CenterPoint;
-    public Vector3 m_LastPlayerLocation;
 
-    public bool m_PlayerInContact;
 
+    Vector3 m_LastPlayerLocation;
     public Transform m_Target;
 
     private void Start()
@@ -46,11 +63,13 @@ public class EnemyMovement : MonoBehaviour
         meleeAttackBehaviour = GetComponent<EnemyMeleeAttackBehaviour>();
 
         m_Agent.speed = s_MovementSpeed;
+        m_idelTime = m_maxIdelTime;
+        m_susTime = m_maxSusTime;
+
     }
     private void Update()
     {
         DetectionCone();
-        UpdateBehaviourState();
 
         switch (p_Mode)
         {
@@ -58,48 +77,125 @@ public class EnemyMovement : MonoBehaviour
                 {
                     if (m_Agent.remainingDistance <= m_Agent.stoppingDistance)
                     {
-                        Vector3 point;
-                        if (RandomPoint(m_CenterPoint.position, m_Range, out point))
+                        //Handle rotation
+                        if(s_changeRotateDirectionTime > 0)
+                            s_changeRotateDirectionTime -= Time.deltaTime;
+                        else
                         {
-                            m_Agent.SetDestination(point);
+                            s_changeRotateDirectionTime = s_MaxChangeRotateDirectionTime;
+                            rotationSpeed *= -1;
+                        }
+                        transform.Rotate(rotationSpeed * Time.deltaTime);
+
+                        if (m_idelTime > 0)
+                        { 
+                            m_idelTime -= Time.deltaTime;
+                            transform.Rotate(rotationSpeed * Time.deltaTime);
+                        }
+                        else
+                        {
+                            Vector3 point;
+                            if (RandomPoint(m_CenterPoint.position, m_Range, out point))
+                            {
+                                m_Agent.SetDestination(point);
+                                m_idelTime = m_maxIdelTime;
+                            }
                         }
                     }
                     break;
                 }
             case MODE.SUSPICIOUS:
                 {
-                    if (sus_CurrentTime > 0)
+                    transform.LookAt(m_LastPlayerLocation);
+                    m_Agent.speed = 0;
+
+                    if (m_susTime > 0)
+                        m_susTime -= Time.deltaTime;
+                    else if (m_AlertValue > 0)
+                        m_AlertValue -= Time.deltaTime * 5.0f;
+                    else
                     {
-                        m_Agent.speed = 0;
-                        transform.LookAt(m_LastPlayerLocation);
-                        sus_CurrentTime -= Time.deltaTime * 5;
-                    }
-/*                    else
-                    {
-                        m_Agent.speed = s_MovementSpeed;
                         p_Mode = MODE.PATROL;
-                    }*/
+                        m_Agent.speed = s_MovementSpeed;
+                        m_susTime = m_maxSusTime;
+                    }
                     break;
                 }
             case MODE.ONALERT:
                 {
-                    m_Agent.speed = s_MovementSpeed;
                     m_Agent.SetDestination(m_LastPlayerLocation);
-                    break;
-                }
+                    m_Agent.speed = s_MovementSpeed;
 
-            case MODE.ATTACKING:
-                {
-                    m_Agent.speed = s_MovementSpeed * 1.25f;
-                    m_Agent.SetDestination(m_Target.position);
                     if (m_Agent.remainingDistance <= m_Agent.stoppingDistance)
                     {
-                        if(rangeAttackBehaviour != null)
-                            rangeAttackBehaviour.AttackPlayer();
+                        //Look around
+                        if (s_changeRotateDirectionTime > 0)
+                            s_changeRotateDirectionTime -= Time.deltaTime;
+                        else
+                        {
+                            s_changeRotateDirectionTime = s_MaxChangeRotateDirectionTime;
+                            rotationSpeed *= -1;
+                        }
+                        transform.Rotate(rotationSpeed * Time.deltaTime);
 
-                        if (meleeAttackBehaviour != null)
-                            meleeAttackBehaviour.AttackPlayer();
+                        if (m_alertTime > 0)
+                            m_alertTime -= Time.deltaTime;
+                        else if (m_AlertValue > 0)
+                            m_AlertValue -= Time.deltaTime * 5.0f;
+                        else
+                        {
+                            p_Mode = MODE.PATROL;
+                            m_alertTime = m_maxAlertTime;
+                        }
                     }
+
+                    break;
+                }
+                case MODE.ATTACKING:
+                {
+                    //When player is out of enemy viewrange
+                    if (m_searchTime > 0)
+                    {
+                        m_searchTime -= Time.deltaTime;
+                        m_Agent.SetDestination(m_Target.position);
+                        m_LastPlayerLocation = m_Target.position;
+                        //Attacking player
+                        if (m_Agent.remainingDistance <= m_Agent.stoppingDistance)
+                        {
+                            if (rangeAttackBehaviour != null)
+                                rangeAttackBehaviour.AttackPlayer();
+
+                            if (meleeAttackBehaviour != null)
+                                meleeAttackBehaviour.AttackPlayer();
+                        }
+                    }
+                    else
+                    {
+                        m_Agent.SetDestination(m_LastPlayerLocation);
+                        if (m_lookOutTime > 0)
+                        {
+                            m_lookOutTime -= Time.deltaTime;
+                        }
+                        else if (m_AlertValue > 0)
+                            m_AlertValue -= Time.deltaTime * 5.0f;
+                        else
+                        {
+                            p_Mode = MODE.PATROL;
+                            m_searchTime = m_maxSearchTime;
+                            m_lookOutTime = m_maxLookOutTime;
+                        }
+                        //Look around
+                        if (s_changeRotateDirectionTime > 0)
+                            s_changeRotateDirectionTime -= Time.deltaTime;
+                        else
+                        {
+                            s_changeRotateDirectionTime = s_MaxChangeRotateDirectionTime;
+                            rotationSpeed *= -1;
+                        }
+                        transform.Rotate(rotationSpeed * Time.deltaTime);
+
+                    }
+
                     break;
                 }
         }
@@ -141,33 +237,37 @@ public class EnemyMovement : MonoBehaviour
                         else if (m_AlertValue >= m_MaxAlertValue)
                             m_AlertValue = m_MaxAlertValue;
 
-                        p_Mode = MODE.SUSPICIOUS;
-                        sus_CurrentTime = sus_MaxTime;
+                        UpdateBehaviourState();
 
-                        m_PlayerInContact = true;
                         m_LastPlayerLocation = playerpos;
                         m_Target = collider.transform ;
                     }
                 }
-                else
-                {
-                    if (m_AlertValue > 0)
-                    {
-                        m_AlertValue -= Time.deltaTime * 5;
-                    }
-                }
+
             }
         }
     }
-
     void UpdateBehaviourState()
     {
-
+        if (m_AlertValue > 0.0f && m_AlertValue <= 25.0f)
+        {
+            p_Mode = MODE.SUSPICIOUS;
+        }
+        if (m_AlertValue > 25.0f && m_AlertValue <= 90.0f)
+        {
+            p_Mode = MODE.ONALERT;
+        }
+        if (m_AlertValue > 90.0f && m_AlertValue <= 100.0f)
+        {
+            p_Mode = MODE.ATTACKING;
+            m_searchTime = m_maxSearchTime;
+            m_lookOutTime = m_maxLookOutTime;
+        }
     }
 
     void OnDrawGizmos()
     {
-        Gizmos.color = Color.green;
+        Gizmos.color = UnityEngine.Color.green;
         Vector3 forward = transform.forward * coneLength;
         Gizmos.DrawRay(coneTip.position, forward);
 

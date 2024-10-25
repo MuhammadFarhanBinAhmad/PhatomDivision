@@ -281,11 +281,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   p_Mode: 0
   s_MovementSpeed: 3
+  s_changeRotateDirectionTime: 1.5
+  s_MaxChangeRotateDirectionTime: 1
+  rotationSpeed: {x: 0, y: 20, z: 0}
+  m_idelTime: 0
+  m_maxIdelTime: 3
+  m_susTime: 0
+  m_maxSusTime: 3
+  m_alertTime: 0
+  m_maxAlertTime: 3
+  m_searchTime: 0
+  m_maxSearchTime: 3
+  m_lookOutTime: 0
+  m_maxLookOutTime: 3
   coneTip: {fileID: 1089453308929575942}
   coneAngle: 130
   coneLength: 10
   m_Range: 15
-  m_MaxAlertValue: 0
+  m_MaxAlertValue: 100
   m_AlertValue: 0
   m_CenterPoint: {fileID: 0}
   m_Target: {fileID: 0}
@@ -479,7 +492,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 2, y: 0.5}
+  m_SizeDelta: {x: 0.75, y: 0.75}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7759590727580624704
 CanvasRenderer:
@@ -502,21 +515,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 0, b: 0, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 44d01b91ec6b0df41b26b624d8f6ea38, type: 3}
+  m_Sprite: {fileID: 10913, guid: 0000000000000000f000000000000000, type: 0}
   m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
-  m_FillMethod: 0
+  m_FillMethod: 4
   m_FillAmount: 0
   m_FillClockwise: 1
-  m_FillOrigin: 1
+  m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
 --- !u!1 &6183402689502254400
