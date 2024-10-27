@@ -18,6 +18,9 @@ public class EnemyMovement : MonoBehaviour
 
     NavMeshAgent m_Agent;
     public MODE p_Mode;
+    public AudioSource p_audioSource;
+
+    bool m_alarmSoundPlayed;
 
     [Header("MovementStats")]
     public float s_MovementSpeed;
@@ -85,12 +88,11 @@ public class EnemyMovement : MonoBehaviour
                             s_changeRotateDirectionTime = s_MaxChangeRotateDirectionTime;
                             rotationSpeed *= -1;
                         }
-                        transform.Rotate(rotationSpeed * Time.deltaTime);
+                        transform.Rotate(rotationSpeed);
 
                         if (m_idelTime > 0)
                         { 
                             m_idelTime -= Time.deltaTime;
-                            transform.Rotate(rotationSpeed * Time.deltaTime);
                         }
                         else
                         {
@@ -239,9 +241,16 @@ public class EnemyMovement : MonoBehaviour
 
                         UpdateBehaviourState();
 
+                        if(!m_alarmSoundPlayed)
+                            p_audioSource.Play();
+
                         m_LastPlayerLocation = playerpos;
                         m_Target = collider.transform ;
                     }
+                }
+                else
+                {
+                    m_alarmSoundPlayed = false;
                 }
 
             }

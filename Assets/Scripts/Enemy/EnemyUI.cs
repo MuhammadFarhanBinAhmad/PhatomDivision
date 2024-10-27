@@ -13,7 +13,7 @@ public class EnemyUI : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        s_EnemyMovement = FindObjectOfType<EnemyMovement>();    
+        s_EnemyMovement = GetComponentInParent<EnemyMovement>();    
     }
 
 
