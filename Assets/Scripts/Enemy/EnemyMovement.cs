@@ -10,13 +10,16 @@ public class EnemyMovement : MonoBehaviour
         PATROL,
         ATTACKING,
         SUSPICIOUS,
+        SEARCHING,
         ONALERT
     }
 
     EnemyRangeAttackBehaviour rangeAttackBehaviour;
     EnemyMeleeAttackBehaviour meleeAttackBehaviour;
 
-    NavMeshAgent m_Agent;
+    public EnemyManager e_Manager;
+
+    public NavMeshAgent m_Agent;
     public MODE p_Mode;
     public AudioSource p_audioSource;
 
@@ -45,6 +48,7 @@ public class EnemyMovement : MonoBehaviour
     public float m_maxSearchTime;
     public float m_lookOutTime;
     public float m_maxLookOutTime;
+    public bool m_playerSpotted;
 
     [Header("DetectionZone")]
     public Transform coneTip;  // The position of the tip of the cone (vertex)
@@ -56,7 +60,7 @@ public class EnemyMovement : MonoBehaviour
     public Transform m_CenterPoint;
 
 
-    Vector3 m_LastPlayerLocation;
+    public Vector3 m_LastPlayerLocation;
     public Transform m_Target;
 
     private void Start()
@@ -88,7 +92,7 @@ public class EnemyMovement : MonoBehaviour
                             s_changeRotateDirectionTime = s_MaxChangeRotateDirectionTime;
                             rotationSpeed *= -1;
                         }
-                        transform.Rotate(rotationSpeed);
+                        transform.Rotate(rotationSpeed * Time.deltaTime);
 
                         if (m_idelTime > 0)
                         { 
@@ -127,8 +131,11 @@ public class EnemyMovement : MonoBehaviour
                 {
                     m_Agent.SetDestination(m_LastPlayerLocation);
                     m_Agent.speed = s_MovementSpeed;
-
-                    if (m_Agent.remainingDistance <= m_Agent.stoppingDistance)
+                    if (m_playerSpotted)
+                    {
+                        transform.LookAt(m_LastPlayerLocation);
+                    }
+                    else if (m_Agent.remainingDistance <= m_Agent.stoppingDistance)
                     {
                         //Look around
                         if (s_changeRotateDirectionTime > 0)
@@ -153,13 +160,41 @@ public class EnemyMovement : MonoBehaviour
 
                     break;
                 }
+                case MODE.SEARCHING:
+                {
+                    m_Agent.SetDestination(m_LastPlayerLocation);
+                    if (m_lookOutTime > 0)
+                    {
+                        m_lookOutTime -= Time.deltaTime;
+                    }
+                    else if (m_AlertValue > 0)
+                        m_AlertValue -= Time.deltaTime * 5.0f;
+                    else
+                    {
+                        p_Mode = MODE.PATROL;
+                        m_searchTime = m_maxSearchTime;
+                        m_lookOutTime = m_maxLookOutTime;
+                    }
+                    //Look around
+                    if (s_changeRotateDirectionTime > 0)
+                        s_changeRotateDirectionTime -= Time.deltaTime;
+                    else
+                    {
+                        s_changeRotateDirectionTime = s_MaxChangeRotateDirectionTime;
+                        rotationSpeed *= -1;
+                    }
+                    transform.Rotate(rotationSpeed * Time.deltaTime);
+                    break;
+
+                }
                 case MODE.ATTACKING:
                 {
-                    //When player is out of enemy viewrange
                     if (m_searchTime > 0)
                     {
+                        //When player is in of enemy viewrange
                         m_searchTime -= Time.deltaTime;
                         m_Agent.SetDestination(m_Target.position);
+                        transform.LookAt(m_LastPlayerLocation);
                         m_LastPlayerLocation = m_Target.position;
                         //Attacking player
                         if (m_Agent.remainingDistance <= m_Agent.stoppingDistance)
@@ -171,31 +206,10 @@ public class EnemyMovement : MonoBehaviour
                                 meleeAttackBehaviour.AttackPlayer();
                         }
                     }
+                    //When player is out of enemy viewrange and search time has = 0
                     else
                     {
-                        m_Agent.SetDestination(m_LastPlayerLocation);
-                        if (m_lookOutTime > 0)
-                        {
-                            m_lookOutTime -= Time.deltaTime;
-                        }
-                        else if (m_AlertValue > 0)
-                            m_AlertValue -= Time.deltaTime * 5.0f;
-                        else
-                        {
-                            p_Mode = MODE.PATROL;
-                            m_searchTime = m_maxSearchTime;
-                            m_lookOutTime = m_maxLookOutTime;
-                        }
-                        //Look around
-                        if (s_changeRotateDirectionTime > 0)
-                            s_changeRotateDirectionTime -= Time.deltaTime;
-                        else
-                        {
-                            s_changeRotateDirectionTime = s_MaxChangeRotateDirectionTime;
-                            rotationSpeed *= -1;
-                        }
-                        transform.Rotate(rotationSpeed * Time.deltaTime);
-
+                        p_Mode = MODE.SEARCHING;
                     }
 
                     break;
@@ -238,6 +252,7 @@ public class EnemyMovement : MonoBehaviour
                             m_AlertValue += Time.deltaTime * 25;
                         else if (m_AlertValue >= m_MaxAlertValue)
                             m_AlertValue = m_MaxAlertValue;
+                        m_playerSpotted = true;
 
                         UpdateBehaviourState();
 
@@ -251,12 +266,17 @@ public class EnemyMovement : MonoBehaviour
                 else
                 {
                     m_alarmSoundPlayed = false;
+                    m_playerSpotted = false;
+                    if (m_AlertValue > 90.0f && m_AlertValue <= 100.0f)
+                    {
+                        p_Mode = MODE.SEARCHING;
+                    }
                 }
 
             }
         }
     }
-    void UpdateBehaviourState()
+    public void UpdateBehaviourState()
     {
         if (m_AlertValue > 0.0f && m_AlertValue <= 25.0f)
         {
@@ -268,9 +288,14 @@ public class EnemyMovement : MonoBehaviour
         }
         if (m_AlertValue > 90.0f && m_AlertValue <= 100.0f)
         {
-            p_Mode = MODE.ATTACKING;
-            m_searchTime = m_maxSearchTime;
-            m_lookOutTime = m_maxLookOutTime;
+            if (m_playerSpotted)
+            {
+                p_Mode = MODE.ATTACKING;
+                m_searchTime = m_maxSearchTime;
+                m_lookOutTime = m_maxLookOutTime;
+                e_Manager.AlertPosition();
+                e_Manager.AlertAll();
+            }
         }
     }
 

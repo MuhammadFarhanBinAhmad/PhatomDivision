@@ -21,7 +21,7 @@ public class PlayerProjectile : MonoBehaviour
 
     private void FixedUpdate()
     {
-        m_RigidBody.velocity =  -transform.forward * p_Speed;
+        m_RigidBody.linearVelocity =  -transform.forward * p_Speed;
     }
     public void SetProjectileStats(float speed, int damage)
     {
