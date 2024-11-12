@@ -32,8 +32,8 @@ public class EnemyMovement : MonoBehaviour
     public Vector3 rotationSpeed = new Vector3(0, 50, 0); // Degrees per second on each axis
 
     [Header("PatrolState")]
-    public float m_idelTime;
-    public float m_maxIdelTime;
+    public float m_idealTime;
+    public float m_maxIdealTime;
 
     [Header("SuspiciousState")]
     public float m_susTime;
@@ -63,20 +63,38 @@ public class EnemyMovement : MonoBehaviour
     public Vector3 m_LastPlayerLocation;
     public Transform m_Target;
 
+    public LineRenderer lineRenderer;
+
+
     private void Start()
     {
         m_Agent = GetComponent<NavMeshAgent>();
         rangeAttackBehaviour = GetComponent<EnemyRangeAttackBehaviour>();
         meleeAttackBehaviour = GetComponent<EnemyMeleeAttackBehaviour>();
 
+
+        if (lineRenderer == null)
+        {
+            lineRenderer = gameObject.AddComponent<LineRenderer>();
+        }
+
+        lineRenderer.startWidth = 0.05f;
+        lineRenderer.endWidth = 0.05f;
+        lineRenderer.positionCount = 5; // 3 points for the cone and back to the origin
+        lineRenderer.useWorldSpace = true;
+        lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+        lineRenderer.startColor = UnityEngine.Color.green;
+        lineRenderer.endColor = UnityEngine.Color.green;
+
         m_Agent.speed = s_MovementSpeed;
-        m_idelTime = m_maxIdelTime;
+        m_idealTime = m_maxIdealTime;
         m_susTime = m_maxSusTime;
 
     }
     private void Update()
     {
         DetectionCone();
+        DrawDetectionCone();  // This will draw the rays in play mode as well
 
         switch (p_Mode)
         {
@@ -94,9 +112,9 @@ public class EnemyMovement : MonoBehaviour
                         }
                         transform.Rotate(rotationSpeed * Time.deltaTime);
 
-                        if (m_idelTime > 0)
+                        if (m_idealTime > 0)
                         { 
-                            m_idelTime -= Time.deltaTime;
+                            m_idealTime -= Time.deltaTime;
                         }
                         else
                         {
@@ -104,7 +122,7 @@ public class EnemyMovement : MonoBehaviour
                             if (RandomPoint(m_CenterPoint.position, m_Range, out point))
                             {
                                 m_Agent.SetDestination(point);
-                                m_idelTime = m_maxIdelTime;
+                                m_idealTime = m_maxIdealTime;
                             }
                         }
                     }
@@ -129,11 +147,11 @@ public class EnemyMovement : MonoBehaviour
                 }
             case MODE.ONALERT:
                 {
-                    m_Agent.SetDestination(m_LastPlayerLocation);
                     m_Agent.speed = s_MovementSpeed;
                     if (m_playerSpotted)
                     {
                         transform.LookAt(m_LastPlayerLocation);
+                        m_Agent.SetDestination(m_LastPlayerLocation);
                     }
                     else if (m_Agent.remainingDistance <= m_Agent.stoppingDistance)
                     {
@@ -285,6 +303,7 @@ public class EnemyMovement : MonoBehaviour
         if (m_AlertValue > 25.0f && m_AlertValue <= 90.0f)
         {
             p_Mode = MODE.ONALERT;
+            m_LastPlayerLocation = m_Target.transform.position;
         }
         if (m_AlertValue > 90.0f && m_AlertValue <= 100.0f)
         {
@@ -301,15 +320,33 @@ public class EnemyMovement : MonoBehaviour
 
     void OnDrawGizmos()
     {
-        Gizmos.color = UnityEngine.Color.green;
+        // Set color for rays in the Game view
+        UnityEngine.Color rayColor = UnityEngine.Color.green;
+
+        // Main forward ray
         Vector3 forward = transform.forward * coneLength;
-        Gizmos.DrawRay(coneTip.position, forward);
+        Debug.DrawRay(coneTip.position, forward, rayColor);
 
         // Draw the outline of the cone
         Vector3 right = Quaternion.Euler(0, coneAngle / 2, 0) * forward;
-        Gizmos.DrawRay(coneTip.position, right);
+        Debug.DrawRay(coneTip.position, right, rayColor);
 
         Vector3 left = Quaternion.Euler(0, -coneAngle / 2, 0) * forward;
-        Gizmos.DrawRay(coneTip.position, left);
+        Debug.DrawRay(coneTip.position, left, rayColor);
+    }
+    void DrawDetectionCone()
+    {
+        Vector3 forward = transform.forward * coneLength;
+
+        // Calculate the direction for the cone outline
+        Vector3 right = Quaternion.Euler(0, coneAngle / 2, 0) * forward;
+        Vector3 left = Quaternion.Euler(0, -coneAngle / 2, 0) * forward;
+
+        // Set LineRenderer positions to draw the cone lines
+        lineRenderer.SetPosition(0, coneTip.position);
+        lineRenderer.SetPosition(1, coneTip.position + right);
+        lineRenderer.SetPosition(2, coneTip.position + forward);
+        lineRenderer.SetPosition(3, coneTip.position + left);
+        lineRenderer.SetPosition(4, coneTip.position);
     }
 }

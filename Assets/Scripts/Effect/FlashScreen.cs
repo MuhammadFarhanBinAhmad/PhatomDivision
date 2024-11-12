@@ -17,6 +17,6 @@ public class FlashScreen : MonoBehaviour
     {
         //Single Flash
         white_Screen.color = Color.clear;
-        FindObjectOfType<CameraControl>().ShakeCamera(5f, .15f);
+        //FindObjectOfType<CameraControl>().ShakeCamera(5f, .15f);
     }
 }
